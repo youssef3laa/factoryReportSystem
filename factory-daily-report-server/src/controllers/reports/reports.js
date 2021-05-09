@@ -76,6 +76,7 @@ exports.getReportsMoreThanOrEqualDate = async (req, res) => {
 exports.getReportsLikeReportCode = async (req, res) => {
   let query = {
     reportCodeValue: { $regex: `.*${req.query.value}.*`, $options: "i" },
+    isDeleted: false,
   };
   return res.send(
     await getDB().collection("reports").find(query).limit(5).toArray()
