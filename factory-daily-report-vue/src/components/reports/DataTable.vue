@@ -361,7 +361,7 @@
           hide-overlay
           transition="dialog-bottom-transition"
         >
-          <v-card flat height="200px" tile @keyup.enter="addOrEditHandler">
+          <v-card flat tile>
             <v-toolbar dark color="primary" extended extension-height="50">
               <v-btn icon dark @click="dialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -369,17 +369,29 @@
               <v-toolbar-title>Report Details</v-toolbar-title>
               <v-spacer></v-spacer>
               <v-toolbar-items>
-                <v-btn v-if="mode" dark text :disabled="!validate" @click="add">
+                <v-btn
+                  v-if="mode == true"
+                  dark
+                  text
+                  :disabled="!validate"
+                  @click="add"
+                >
                   Add
                 </v-btn>
-                <v-btn v-else dark text :disabled="!validate" @click="editItem">
+                <v-btn
+                  v-if="mode == false"
+                  dark
+                  text
+                  :disabled="!validate"
+                  @click="editItem"
+                >
                   Edit
                 </v-btn>
               </v-toolbar-items>
             </v-toolbar>
             <v-container class="pa-10">
-              <v-form v-model="validate">
-                <v-row>
+              <v-form v-model="validate" ref="form">
+                <v-row v-if="mode != 'view'">
                   <v-col cols="8"> </v-col>
                   <v-col>
                     <v-combobox
@@ -390,6 +402,7 @@
                       label="Prefill by Report Code"
                       v-model.trim="reportCodeFilter"
                       color="blue-grey lighten-2"
+                      :disabled="mode == 'view'"
                     ></v-combobox>
                   </v-col>
                 </v-row>
@@ -413,6 +426,7 @@
                           v-on="on"
                           clearable
                           :rules="[rules.required]"
+                          :disabled="mode == 'view'"
                         ></v-text-field>
                       </template>
                       <v-date-picker
@@ -431,11 +445,12 @@
                       item-text="name"
                       item-value="id"
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     ></v-autocomplete>
                   </v-col>
                   <v-col cols="4">
                     <v-autocomplete
-                      :disabled="machines.length < 1"
+                      :disabled="!item.fieldId || mode == 'view'"
                       :items="machines"
                       label="Equipment"
                       v-model.trim="item.machineId"
@@ -456,6 +471,7 @@
                       label="Incident Location"
                       aria-rowspan="5"
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     ></v-combobox>
                   </v-col>
                 </v-row>
@@ -469,6 +485,7 @@
                       label="Problem Description"
                       aria-rowspan="5"
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     ></v-combobox>
                   </v-col>
                 </v-row>
@@ -481,12 +498,12 @@
                   <v-row>
                     <v-col cols="6">
                       <v-autocomplete
-                        :items="parts"
+                        :items="allParts"
                         v-model.trim="item.partsDetails[index].partCode"
                         label="Spare Part Code"
                         item-text="name"
                         item-value="id"
-                        :disabled="parts.length < 1"
+                        :disabled="allParts.length < 1 || mode == 'view'"
                         :rules="[rules.required]"
                       >
                       </v-autocomplete>
@@ -496,6 +513,7 @@
                         v-model.number="item.partsDetails[index].quantity"
                         label="Quantity"
                         :rules="[rules.required, rules.number]"
+                        :disabled="mode == 'view'"
                       >
                       </v-text-field>
                     </v-col>
@@ -503,20 +521,20 @@
                   <v-row>
                     <v-col cols="12 ">
                       <v-autocomplete
-                        :items="parts"
+                        :items="allParts"
                         v-model.trim="item.partsDetails[index].partCode"
                         label="Spare Part Description"
                         item-text="partDescription"
                         item-value="id"
                         clearable
-                        :disabled="parts.length < 1"
+                        :disabled="allParts.length < 1 || mode == 'view'"
                         :rules="[rules.required]"
                       >
                       </v-autocomplete>
                     </v-col>
                   </v-row>
                 </div>
-                <v-row class="justify-end">
+                <v-row v-if="mode != 'view'" class="justify-end">
                   <v-btn
                     color="primary "
                     dark
@@ -537,6 +555,7 @@
                       multiple
                       :rules="[rules.required]"
                       chips
+                      :disabled="mode == 'view'"
                     >
                       <template v-slot:selection="data">
                         <v-chip
@@ -579,6 +598,7 @@
                       item-text="name"
                       item-value="id"
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     >
                     </v-autocomplete>
                   </v-col>
@@ -590,6 +610,7 @@
                       item-text="name"
                       item-value="id"
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     >
                     </v-autocomplete>
                   </v-col>
@@ -601,6 +622,7 @@
                       label="Action Description"
                       clearable
                       :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     >
                     </v-textarea>
                   </v-col>
@@ -629,6 +651,7 @@
                           :close-on-click="true"
                           clearable
                           :rules="[rules.required]"
+                          :disabled="mode == 'view'"
                         ></v-text-field>
                       </template>
                       <v-time-picker
@@ -659,7 +682,7 @@
                           v-bind="attrs"
                           v-on="on"
                           clearable
-                          :disabled="toPickerDisabled"
+                          :disabled="toPickerDisabled || mode == 'view'"
                           :rules="[rules.required]"
                         ></v-text-field>
                       </template>
@@ -684,7 +707,7 @@
                   </v-col>
                   <v-col v-if="item.reportCode" cols="6">
                     <v-text-field
-                      v-model.trim="reportCodeValue"
+                      v-model="reportCodeValue"
                       disabled
                       label="Report Code"
                     >
@@ -702,11 +725,11 @@
             >
             <v-card-actions>
               <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="deleteConfirm"
+                >Yes</v-btn
+              >
               <v-btn color="blue darken-1" text @click="closeDelete"
                 >Cancel</v-btn
-              >
-              <v-btn color="blue darken-1" text @click="deleteConfirm"
-                >OK</v-btn
               >
               <v-spacer></v-spacer>
             </v-card-actions>
@@ -724,15 +747,30 @@
           </template>
 
           <v-list>
-            <v-list-item @click="editModalMode(item)" link>
+            <v-list-item @click="viewModalMode(item)" link>
+              <v-list-item-title
+                ><v-icon small class="mr-2"> mdi-arrow-expand-all </v-icon
+                ><span class="">View</span></v-list-item-title
+              >
+            </v-list-item>
+            <v-list-item
+              v-if="!item.isDeleted"
+              @click="editModalMode(item)"
+              link
+            >
               <v-list-item-title
                 ><v-icon small class="mr-2"> mdi-pencil </v-icon
                 ><span class="">Edit</span></v-list-item-title
               >
             </v-list-item>
-            <v-list-item @click="deleteModalMode(item)" link>
+            <v-list-item
+              v-if="!item.isDeleted"
+              @click="deleteModalMode(item)"
+              link
+            >
               <v-list-item-title
-                ><v-icon small> mdi-delete </v-icon><span>Delete</span>
+                ><v-icon class="mr-2" small> mdi-delete </v-icon
+                ><span>Delete</span>
               </v-list-item-title>
             </v-list-item>
           </v-list>
@@ -775,13 +813,11 @@ export default {
         { text: "Field", value: "fieldName", sortable: true },
         { text: "Equipment", value: "machineName", sortable: true },
         { text: "Type", value: "typeName", sortable: true },
-        // { text: "Qty.", value: "quantity", sortable: true },
-        // { text: "Spare Part Code", value: "partName", sortable: true },
-        // { text: "Teams", value: "team", sortable: true },
         { text: "Status", value: "statusName", sortable: true },
-        { text: "From", value: "fromPicker", sortable: true },
-        { text: "To", value: "toPicker", sortable: true },
+        // { text: "From", value: "fromPicker", sortable: true },
+        // { text: "To", value: "toPicker", sortable: true },
         { text: "Total Time", value: "totalTime", sortable: true },
+        { text: "Reported By", value: "reportedBy", sortable: true },
         { text: "Actions", value: "actions", sortable: false },
       ],
       reports: [],
@@ -830,22 +866,23 @@ export default {
         reportCode: `${this.item.fieldId}-${this.item.machineId}-${
           this.item.reportCode ? this.item.reportCode.split("-")[2] : ""
         }`,
-        reportCodeValue: `${
-          this.fields.find((f) => this.item.fieldId == f.id).code
-        }-${this.allMachines.find((m) => this.item.machineId == m.id).code}-${
-          this.item.reportCode ? this.item.reportCode.split("-")[2] : ""
-        }`,
-        // reportedBy: this.$store.getters.currentUser,
+        // reportCodeValue: `${
+        //   (
+        //     await this.$store.dispatch("getFieldById", {
+        //       id: this.item.fieldId,
+        //     })
+        //   ).data.code
+        // }-${
+        //   (
+        //     await this.$store.dispatch("getEquipmentById", {
+        //       id: this.item.machineId,
+        //     })
+        //   ).data.code
+        // }-${this.item.reportCode ? this.item.reportCode.split("-")[2] : ""}`,
+        reportedBy: this.$store.getters.currentUser.name,
       };
     },
-    reportCodeValue() {
-      return `${
-        this.fields.find((f) => f.id == this.item.reportCode.split("-")[0]).code
-      }-${
-        this.allMachines.find((m) => m.id == this.item.reportCode.split("-")[1])
-          .code
-      }-${this.item.reportCode.split("-")[2]}`;
-    },
+
     toPickerDisabled() {
       return !this.item.fromPicker;
     },
@@ -854,18 +891,26 @@ export default {
     },
   },
 
-  async created() {
-    await this.loadAllFields();
-    await this.loadAllMachines();
-    await this.loadAllParts();
-    await this.loadAllTeams();
-    if (this.$route.params.id) {
-      this.reports = this.normalizeReturnedReports([
-        await this.getReportById(this.$route.params.id),
-      ]);
-    } else if (this.$route.query.trid) {
-      this.prefillReportModalByTechId(this.$route.query.trid);
-    } else this.reloadReports();
+  asyncComputed: {
+    async reportCodeValue() {
+      if (this.item.reportCode) {
+        let field = await this.$store.dispatch("getFieldById", {
+          id: this.item.reportCode.split("-")[0],
+        });
+        let equipment = await this.$store.dispatch("getEquipmentById", {
+          id: this.item.reportCode.split("-")[1],
+        });
+        return `${field.data.code}-${equipment.data.code}-${
+          this.item.reportCode.split("-")[2]
+        }`;
+      } else return "";
+      // return `${
+      //   this.fields.find((f) => f.id == this.item.reportCode.split("-")[0]).code
+      // }-${
+      //   this.allMachines.find((m) => m.id == this.item.reportCode.split("-")[1])
+      //     .code
+      // }-${this.item.reportCode.split("-")[2]}`;
+    },
   },
 
   watch: {
@@ -903,13 +948,39 @@ export default {
     async reportCodeFilter(newVal) {
       if (!!newVal) {
         let report = await this.getReportById(newVal.rid);
-        this.item.fieldId = report.fieldId;
-        this.item.machineId = report.machineId;
-        this.item.partsDetails = report.partsDetails;
+        let {
+          reportCode,
+          team,
+          date,
+          fromPicker,
+          toPicker,
+          totalTime,
+          id,
+          _id,
+          ...data
+        } = report;
+        this.item = { ...data };
       }
+    },
+
+    dialog() {
+      if (this.$refs.form) this.$refs.form.resetValidation();
     },
   },
 
+  async created() {
+    await this.loadAllFields();
+    await this.loadAllMachines();
+    await this.loadAllParts();
+    await this.loadAllTeams();
+    if (this.$route.params.id) {
+      this.reports = this.normalizeReturnedReports([
+        await this.getReportById(this.$route.params.id),
+      ]);
+    } else if (this.$route.query.trid) {
+      this.prefillReportModalByTechId(this.$route.query.trid);
+    } else this.reloadReports();
+  },
   methods: {
     c(item) {
       return item.typeId == 3 ? "white--text red" : "";
@@ -942,7 +1013,6 @@ export default {
       });
 
       this.fields = tempArr;
-      this.loader = false;
     },
     async reloadMachinesData(fieldId) {
       let ss = (
@@ -1039,6 +1109,11 @@ export default {
       this.mode = false;
       this.open();
     },
+    viewModalMode(item) {
+      this.item = { ...item };
+      this.mode = "view";
+      this.open();
+    },
     async editItem() {
       this.currentItem.id = this.item.id;
       await this.$store.dispatch("editReport", this.currentItem);
@@ -1061,6 +1136,12 @@ export default {
       this.$store.dispatch("deleteReport", { id: this.item.id }).then(() => {
         this.closeDelete();
         this.reloadReports();
+        this.$notify({
+          group: "mainActionsNotifications",
+          title: "Deleted!",
+          text: "Data has been deleted successfully.",
+          type: "success",
+        });
       });
     },
 
@@ -1133,19 +1214,23 @@ export default {
     clearFilterDialog() {
       this.filterOptions = { partsDetails: [{}] };
     },
-    normalizeReturnedReports(reports) {
+    async normalizeReturnedReports(reports) {
       let tempArr = [];
       for (let report of reports) {
         let obj = {
           id: report._id,
+          isDeleted: report.isDeleted,
           date: report.date.split("T")[0],
           fieldId: report.fieldId,
-          fieldName: this.fields.find((field) => report.fieldId == field.id)
-            .name,
+          fieldName: (
+            await this.$store.dispatch("getFieldById", { id: report.fieldId })
+          ).data.name_eng,
           machineId: report.machineId,
-          machineName: this.allMachines.find(
-            (machine) => report.machineId == machine.id
-          ).name,
+          machineName: (
+            await this.$store.dispatch("getEquipmentById", {
+              id: report.machineId,
+            })
+          ).data.name_eng,
           typeId: report.typeId,
           typeName: this.typeList.find((type) => report.typeId == type.id).name,
           partsDetails: report.partsDetails,
@@ -1160,8 +1245,12 @@ export default {
           problemDescription: report.problemDescription,
           incidentLocation: report.incidentLocation,
           reportCode: report.reportCode,
+          reportedBy: (
+            await this.$store.dispatch("getTeamById", {
+              _id: report.reportedBy,
+            })
+          ).data.name,
         };
-        // this.$store.dispatch("getUserById", "qwfqwf");
         //fill teams
         obj.team = [];
         for (let t of report.team) {

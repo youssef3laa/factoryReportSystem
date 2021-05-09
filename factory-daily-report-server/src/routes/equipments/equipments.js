@@ -14,7 +14,7 @@ router.post("/create", equipments.createEquipment);
 
 router.post("/update", equipments.updateEquipment);
 
-router.post("/delete/:EquipmentId", equipments.deleteEquipment);
+router.post("/delete", equipments.deleteEquipment);
 
 router.get("/filter", equipments.getFilteredEquipments);
 

@@ -8,6 +8,9 @@ export default {
   async editReport(store, payload) {
     return axios.post(`${urlPort}/reports/update`, payload);
   },
+  async deleteReport(store, payload) {
+    return axios.post(`${urlPort}/reports/delete`, payload);
+  },
   async getAllReports() {
     return await axios.get(`${urlPort}/reports/`);
   },

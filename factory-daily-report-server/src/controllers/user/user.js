@@ -42,7 +42,6 @@ exports.registerUser = async (req, res) => {
     let request = await getDB().collection("users").insertOne(req.body);
     return res.status(200).send(request);
   } else {
-    console.log("here");
     return res.send({ message: "Email already exists" });
   }
 };

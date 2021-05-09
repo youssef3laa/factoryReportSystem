@@ -6,19 +6,27 @@
       hide-overlay
       transition="dialog-bottom-transition"
     >
-      <v-card flat height="200px" tile @keyup.enter="add">
+      <v-card flat tile>
         <v-toolbar dark color="primary" extended extension-height="50">
-          <v-btn icon dark @click="dialog = false">
+          <v-btn icon dark @click="close">
             <v-icon>mdi-close</v-icon>
           </v-btn>
           <v-toolbar-title class="text-right">بيانات التقرير</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn dark text :disabled="!validate" @click="add"> إضافة </v-btn>
+            <v-btn
+              v-if="mode != 'view'"
+              dark
+              text
+              :disabled="!validate"
+              @click="add"
+            >
+              إضافة
+            </v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <v-container class="pa-10">
-          <v-form v-model="validate">
+          <v-form v-model="validate" ref="form">
             <v-row>
               <v-col cols="4">
                 <v-menu
@@ -38,6 +46,8 @@
                       v-bind="attrs"
                       v-on="on"
                       clearable
+                      :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     ></v-text-field>
                   </template>
                   <v-date-picker
@@ -55,17 +65,20 @@
                   color="blue-grey lighten-2"
                   item-text="name"
                   item-value="id"
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 ></v-autocomplete>
               </v-col>
               <v-col cols="4">
                 <v-autocomplete
-                  :disabled="machines.length < 1"
+                  :disabled="machines.length < 1 || mode == 'view'"
                   :items="machines"
                   label="ماكينة"
                   v-model.trim="item.machineId"
                   color="blue-grey lighten-2"
                   item-text="name"
                   item-value="id"
+                  :rules="[rules.required]"
                 ></v-autocomplete>
               </v-col>
             </v-row>
@@ -78,6 +91,8 @@
                   :items="incidentLocationList"
                   label="مكان الحدث"
                   aria-rowspan="5"
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 ></v-combobox>
               </v-col>
             </v-row>
@@ -90,6 +105,8 @@
                   :items="problemDescriptionList"
                   label="وصف المشكلة"
                   aria-rowspan="5"
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 ></v-combobox>
               </v-col>
             </v-row>
@@ -102,12 +119,13 @@
               <v-row>
                 <v-col cols="6">
                   <v-autocomplete
-                    :items="parts"
-                    v-model.trim="item.partsDetails[index].partCode"
+                    :items="allParts"
+                    v-model="item.partsDetails[index].partCode"
                     label="كود قطعة الغيار"
                     item-text="name"
                     item-value="id"
-                    :disabled="parts.length < 1"
+                    :disabled="allParts.length < 1 || mode == 'view'"
+                    :rules="[rules.required]"
                   >
                   </v-autocomplete>
                 </v-col>
@@ -115,6 +133,8 @@
                   <v-text-field
                     v-model.number="item.partsDetails[index].quantity"
                     label="الكمية"
+                    :rules="[rules.required, rules.number]"
+                    :disabled="mode == 'view'"
                   >
                   </v-text-field>
                 </v-col>
@@ -122,19 +142,20 @@
               <v-row>
                 <v-col cols="12 ">
                   <v-autocomplete
-                    :items="parts"
-                    v-model.trim="item.partsDetails[index].partCode"
+                    :items="allParts"
+                    v-model="item.partsDetails[index].partCode"
                     label="وصف قطعة الغيار"
                     item-text="partDescription"
                     item-value="id"
                     clearable
-                    :disabled="parts.length < 1"
+                    :disabled="allParts.length < 1 || mode == 'view'"
+                    :rules="[rules.required]"
                   >
                   </v-autocomplete>
                 </v-col>
               </v-row>
             </div>
-            <v-row class="justify-end">
+            <v-row class="justify-end" v-if="mode != 'view'">
               <v-btn
                 color="primary "
                 dark
@@ -154,6 +175,8 @@
                   item-value="id"
                   multiple
                   chips
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 >
                   <template v-slot:selection="data">
                     <v-chip
@@ -163,25 +186,16 @@
                       @click="data.select"
                       @click:close="remove(data.item.id)"
                     >
-                      <v-avatar left>
-                        <v-img src="../../../assets/logo.png"></v-img>
-                      </v-avatar>
                       {{ data.item.name }}
                     </v-chip>
                   </template>
                   <template v-slot:item="data">
                     <template v-if="data.item != 'object'">
-                      <v-list-item-avatar>
-                        <img src="../../../assets/logo.png" />
-                      </v-list-item-avatar>
                       <v-list-item-content
                         v-text="data.item.name"
                       ></v-list-item-content>
                     </template>
                     <template v-else>
-                      <v-list-item-avatar>
-                        <img :src="data.item.avatar" />
-                      </v-list-item-avatar>
                       <v-list-item-content>
                         <v-list-item-title
                           v-html="data.item.name"
@@ -201,6 +215,8 @@
                   label="الحالة"
                   item-text="name"
                   item-value="id"
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 >
                 </v-autocomplete>
               </v-col>
@@ -211,6 +227,8 @@
                   label="النوع"
                   item-text="name"
                   item-value="id"
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 >
                 </v-autocomplete>
               </v-col>
@@ -221,6 +239,8 @@
                   v-model.trim="item.actionDescription"
                   label="وصف القرار"
                   clearable
+                  :rules="[rules.required]"
+                  :disabled="mode == 'view'"
                 >
                 </v-textarea>
               </v-col>
@@ -248,6 +268,8 @@
                       v-on="on"
                       :close-on-click="true"
                       clearable
+                      :rules="[rules.required]"
+                      :disabled="mode == 'view'"
                     ></v-text-field>
                   </template>
                   <v-time-picker
@@ -278,7 +300,8 @@
                       v-bind="attrs"
                       v-on="on"
                       clearable
-                      :disabled="toPickerDisabled"
+                      :disabled="toPickerDisabled || mode == 'view'"
+                      :rules="[rules.required]"
                     ></v-text-field>
                   </template>
                   <v-time-picker
@@ -286,6 +309,7 @@
                     v-model.trim="item.toPicker"
                     scrollable
                     @click:minute="$refs.menu1.save(time)"
+                    :disabled="mode == 'view'"
                   ></v-time-picker>
                 </v-menu>
               </v-col>
@@ -315,7 +339,6 @@ export default {
     return {
       validate: null,
       rules,
-      dialog: false,
       time: null,
       fromPickerMenu: false,
       toPickerMenu: false,
@@ -340,7 +363,6 @@ export default {
         { id: 2, name: "مؤقت" },
         { id: 3, name: "مفتوح" },
       ],
-      item: { partsDetails: [{}] },
     };
   },
 
@@ -373,11 +395,32 @@ export default {
         // reportedBy: this.$store.getters.currentUser,
       };
     },
+    dialog() {
+      return this.$store.getters["technicianDialog"];
+    },
+    item() {
+      return this.$store.getters["technicianItem"];
+    },
+    mode() {
+      return this.$store.getters["technicianMode"];
+    },
   },
   watch: {
     dialog(newVal) {
       if (newVal) this.$vuetify.rtl = true;
       else this.$vuetify.rtl = false;
+      if (this.$refs.form) this.$refs.form.resetValidation();
+    },
+    "item.partsDetails": {
+      immediate: true,
+      handler(newVal) {
+        if (!!newVal) {
+          {
+            // this.item.machineId = undefined;
+            // this.item.partId = undefined;
+          }
+        }
+      },
     },
     "item.fieldId": {
       immediate: true,
@@ -409,6 +452,7 @@ export default {
         if (!!this.item.toPicker) this.calculateTimeDifference();
       }
     },
+
     async reportCodeFilter(newVal) {
       if (!!newVal) {
         let report = await this.getReportById(newVal.rid);
@@ -496,7 +540,7 @@ export default {
       let tempArr = [];
       snapshot.map((part) => {
         let obj = {
-          id: part.id,
+          id: part._id,
           name: part.name,
           partDescription: part.partDescription,
         };
@@ -505,7 +549,7 @@ export default {
       this.allParts = tempArr;
     },
     addModalMode() {
-      this.mode = true;
+      this.$store.commit("setTechnicianMode", true);
       this.open();
     },
     async add() {
@@ -522,13 +566,13 @@ export default {
 
     open() {
       this.emptyItem();
-      this.dialog = true;
+      this.$store.commit("openTechnicianDialog");
     },
     close() {
-      this.dialog = false;
+      this.$store.commit("closeTechnicianDialog");
     },
     emptyItem() {
-      this.item = { partsDetails: [{}] };
+      this.$store.commit("setTechnicianItem", { partsDetails: [{}] });
     },
     remove(item) {
       const index = this.item.team.indexOf(item);

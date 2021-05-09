@@ -99,9 +99,8 @@
           v-model="dialog"
           max-width="500px"
           @keydown.esc="dialog = false"
-          @keydown.enter="save"
         >
-          <v-card v-if="dialog" @keyup.enter="addOrEditHandler">
+          <v-card v-if="dialog">
             <v-card-title>
               <span class="headline">{{ formTitle }}</span>
               <v-spacer></v-spacer>

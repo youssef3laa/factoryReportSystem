@@ -8,6 +8,9 @@ export default {
   async editField(store, payload) {
     return axios.post(`${urlPort}/fields/update`, payload);
   },
+  async deleteField(store, payload) {
+    return axios.post(`${urlPort}/fields/delete`, payload);
+  },
   async getAllFields() {
     return await axios.get(`${urlPort}/fields/`);
   },

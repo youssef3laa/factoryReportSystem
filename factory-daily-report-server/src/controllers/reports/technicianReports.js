@@ -29,19 +29,24 @@ exports.getTechnicianReportById = async (req, res) => {
 };
 exports.getFilteredTechnicianReports = async (req, res) => {
   let query = {};
-  for (let o in req.query) {
+  let data = JSON.parse(req.query[0]);
+  for (let o in data) {
     if (o == "date") {
       let bd, sd;
-      bd =
-        req.query[o][0] > req.query[o][1] ? req.query[o][0] : req.query[o][1];
-      sd =
-        req.query[o][0] > req.query[o][1] ? req.query[o][1] : req.query[o][0];
+      bd = data[o][0] > data[o][1] ? data[o][0] : data[o][1];
+      sd = data[o][0] > data[o][1] ? data[o][1] : data[o][0];
       query[o] = {
         $gte: sd,
         $lte: bd,
       };
-    } else query[o] = { $in: req.query[o] };
+    } else if (o == "partsDetails") {
+      for (let k in data[o][0]) {
+        if (k == "quantity") data[o][0][k] = data[o][0][k].map(Number);
+        query[`${o}.${k}`] = { $in: data[o][0][k] };
+      }
+    } else query[o] = { $in: data[o] };
   }
+  query["state"] = 0;
   return res.send(
     await getDB().collection("technicianReports").find(query).toArray()
   );
@@ -55,6 +60,7 @@ exports.createTechnicianReport = async (req, res) => {
     ).data;
     if (typeof user == "string") return res.status(404);
     req.body.state = 0;
+    req.body.reportedBy = user._id;
     let request = await getDB()
       .collection("technicianReports")
       .insertOne(req.body);

@@ -6,7 +6,11 @@ const Intl = require("intl");
 
 exports.getAllReports = async (req, res) => {
   return res.send(
-    await getDB().collection("reports").find().sort({ date: -1 }).toArray()
+    await getDB()
+      .collection("reports")
+      .find({ isDeleted: false })
+      .sort({ date: -1 })
+      .toArray()
   );
 };
 exports.getReportById = async (req, res) => {
@@ -21,7 +25,7 @@ const getReportContainReportCodeDesc = async (reportCode) => {
   return {
     data: await getDB()
       .collection("reports")
-      .find({ reportCode: { $regex: `.*${reportCode}.*` } })
+      .find({ reportCode: { $regex: `.*${reportCode}.*` }, isDeleted: false })
       .sort({ $natural: -1 })
       .limit(1)
       .toArray(),
@@ -47,7 +51,7 @@ exports.getFilteredReports = async (req, res) => {
       }
     } else query[o] = { $in: data[o] };
   }
-  console.log(query);
+  query["isDeleted"] = false;
   return res.send(await getDB().collection("reports").find(query).toArray());
 };
 exports.getReportsMoreThanOrEqualDate = async (req, res) => {
@@ -90,6 +94,7 @@ exports.createReport = async (req, res) => {
     );
     req.body.reportCode += reportNumber;
     req.body.reportCodeValue += reportNumber;
+    req.body.reportedBy = user._id;
     let request = await getDB().collection("reports").insertOne(req.body);
     let o = {
       userId: user._id,
@@ -153,4 +158,37 @@ exports.updateReport = async (req, res) => {
     );
   } else return res.status(404);
 };
-exports.deleteReport = async (req, res) => {};
+exports.deleteReport = async (req, res) => {
+  if (req.cookies["SYS_SEC_1D"]) {
+    let user = (
+      await axios.get(`${urlPort}/user/id`, {
+        params: { _id: req.cookies["SYS_SEC_1D"] },
+      })
+    ).data;
+    if (typeof user == "string") return res.status(404);
+    let o = {
+      userId: user._id,
+      actionTaken: "3",
+      table: "Reports",
+      link: { name: "ReportId", params: { id: req.body.id } },
+      timestamp: new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: true,
+      }).format(new Date()),
+    };
+    axios.post(`${urlPort}/logs/create`, o);
+    return res.send(
+      getDB()
+        .collection("reports")
+        .updateOne(
+          { _id: ObjectID(req.body.id) },
+          { $set: { isDeleted: true } }
+        )
+    );
+  } else return res.status(404);
+};

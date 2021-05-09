@@ -26,7 +26,7 @@ export default {
   },
   async getFilteredTechnicianReports(store, payload) {
     return await axios.get(`${urlPort}/technician-reports/filter`, {
-      params: payload,
+      params: JSON.stringify(payload),
     });
   },
 };

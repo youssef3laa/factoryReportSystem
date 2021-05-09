@@ -1,4 +1,5 @@
 export function required(v) {
+  if (Array.isArray(v)) return !!(v && v.length) || "Field is required";
   return !!v || "Field is required";
 }
 export function email(v) {

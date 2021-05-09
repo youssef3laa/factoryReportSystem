@@ -12,6 +12,7 @@
     "core-js": "^3.10.1",
     "eslint": "^7.24.0",
     "vue": "^2.6.11",
+    "vue-async-computed": "^3.9.0",
     "vue-cookies": "^1.7.4",
     "vue-notification": "^1.3.20",
     "vue-notification-bell": "^0.8.14",

@@ -173,7 +173,7 @@ export default {
   methods: {
     showTechReportsModal() {
       this.drawer = false;
-      this.$refs.techModal.open();
+      this.$refs.techModal.addModalMode();
     },
     logout() {
       this.$store.dispatch("signOutUser");

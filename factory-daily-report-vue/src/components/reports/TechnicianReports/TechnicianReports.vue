@@ -263,25 +263,16 @@
                           @click="data.select"
                           @click:close="remove(data.item.id)"
                         >
-                          <v-avatar left>
-                            <v-img src="../../../assets/logo.png"></v-img>
-                          </v-avatar>
                           {{ data.item.name }}
                         </v-chip>
                       </template>
                       <template v-slot:item="data">
                         <template v-if="data.item != 'object'">
-                          <v-list-item-avatar>
-                            <img src="../../../assets/logo.png" />
-                          </v-list-item-avatar>
                           <v-list-item-content
                             v-text="data.item.name"
                           ></v-list-item-content>
                         </template>
                         <template v-else>
-                          <v-list-item-avatar>
-                            <img :src="data.item.avatar" />
-                          </v-list-item-avatar>
                           <v-list-item-content>
                             <v-list-item-title
                               v-html="data.item.name"
@@ -340,9 +331,7 @@
             >
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn color="blue darken-1" text @click="deleteConfirm"
-                >Yes</v-btn
-              >
+              <v-btn color="blue darken-1" text @click="reject">Yes</v-btn>
               <v-btn color="blue darken-1" text @click="closeDelete">No</v-btn>
               <v-spacer></v-spacer>
             </v-card-actions>
@@ -365,15 +354,30 @@
           </template>
 
           <v-list>
-            <v-list-item @click="openPrefilledReport(item)" link>
+            <v-list-item @click="viewModalMode(item)" link>
               <v-list-item-title
-                ><v-icon small class="mr-2"> mdi-pencil </v-icon
-                ><span class="">Approve</span></v-list-item-title
+                ><v-icon small class="mr-2"> mdi-arrow-expand-all </v-icon
+                ><span>View</span></v-list-item-title
               >
             </v-list-item>
-            <v-list-item @click="deleteModalMode(item)" link>
+            <v-list-item
+              v-if="item.state == 0"
+              @click="openPrefilledReport(item)"
+              link
+            >
               <v-list-item-title
-                ><v-icon class="mr-2" small> mdi-delete </v-icon
+                ><v-icon small class="mr-2 green--text">
+                  mdi-check-circle </v-icon
+                ><span>Approve</span></v-list-item-title
+              >
+            </v-list-item>
+            <v-list-item
+              v-if="item.state == 0"
+              @click="deleteModalMode(item)"
+              link
+            >
+              <v-list-item-title
+                ><v-icon class="mr-2 red--text" small> mdi-delete </v-icon
                 ><span>Reject</span>
               </v-list-item-title>
             </v-list-item>
@@ -384,6 +388,7 @@
       <template v-slot:no-data>
         <no-data></no-data>
       </template>
+      <technician-modal></technician-modal>
     </v-data-table>
   </v-app>
 </template>
@@ -391,9 +396,11 @@
 <script>
 import NoData from "../../UI/NoData.vue";
 import * as rules from "../../../utils/vrules";
+import TechnicianModal from "./TechnicianAddReport.vue";
 export default {
   components: {
     NoData,
+    TechnicianModal,
   },
   data() {
     return {
@@ -415,9 +422,8 @@ export default {
         { text: "Equipment", value: "machineName", sortable: true },
         { text: "Type", value: "typeName", sortable: true },
         { text: "Status", value: "statusName", sortable: true },
-        { text: "From", value: "fromPicker", sortable: true },
-        { text: "To", value: "toPicker", sortable: true },
         { text: "Total Time", value: "totalTime", sortable: true },
+        { text: "Reported By", value: "reportedBy", sortable: true },
         { text: "Actions", value: "actions", sortable: false },
       ],
       reports: [],
@@ -454,7 +460,7 @@ export default {
     await this.loadAllParts();
     await this.loadAllTeams();
     if (this.$route.params.id) {
-      this.reports = this.normalizeReturnedReports([
+      this.reports = await this.normalizeReturnedReports([
         await this.getReportById(this.$route.params.id),
       ]);
     } else this.reloadReports();
@@ -567,18 +573,18 @@ export default {
       this.filterDialog = true;
       // this.emptyItem();
     },
-    addModalMode() {
-      this.mode = true;
-      this.open();
-      this.emptyItem();
-    },
+    // addModalMode() {
+    //   this.mode = true;
+    //   this.open();
+    //   this.emptyItem();
+    // },
 
     deleteModalMode(item) {
       this.item = item;
       this.dialogDelete = true;
     },
 
-    deleteConfirm() {
+    reject() {
       this.$store.dispatch("rejectTechnicianReport", this.item).then(() => {
         this.closeDelete();
         this.reloadReports();
@@ -609,26 +615,22 @@ export default {
     },
 
     open() {
-      this.dialog = true;
+      this.$store.commit("openTechnicianDialog");
     },
     close() {
-      this.dialog = false;
+      this.$store.commit("closeTechnicianDialog");
     },
 
     closeDelete() {
       this.dialogDelete = false;
     },
     emptyItem() {
-      this.item = { partsDetails: [{}] };
+      this.$store.commit("setTechnicianItem", { partsDetails: [{}] });
     },
     remove(item) {
-      const index = this.item.team.indexOf(item);
-      if (index >= 0) this.item.team.splice(index, 1);
+      const index = this.filterOptions.team.indexOf(item);
+      if (index >= 0) this.filterOptions.team.splice(index, 1);
     },
-    removePartSection(index) {
-      this.item.partsDetails.splice(index, 1);
-    },
-
     clearToPicker() {
       this.item.toPicker = "";
     },
@@ -651,22 +653,15 @@ export default {
         (minutes <= 9 ? "0" : "") +
         minutes;
     },
-    async adjustFilter(equipmentId) {
+    async filter() {
       this.loader = true;
       this.reports = await this.normalizeReturnedReports(
         (
-          await this.$store.dispatch("getFilteredReports", {
-            machineId: [equipmentId],
-          })
+          await this.$store.dispatch(
+            "getFilteredTechnicianReports",
+            this.filterOptions
+          )
         ).data
-      );
-      this.loader = false;
-    },
-    async filter() {
-      this.loader = true;
-      this.reports = this.normalizeReturnedReports(
-        (await this.$store.dispatch("getFilteredReports", this.filterOptions))
-          .data
       );
       this.loader = false;
       this.closeFilterDialog();
@@ -677,12 +672,13 @@ export default {
     clearFilterDialog() {
       this.filterOptions = { partsDetails: [{}] };
     },
-    normalizeReturnedReports(reports) {
+    async normalizeReturnedReports(reports) {
       let tempArr = [];
       if (typeof reports[0] == "string") reports = [];
       for (let report of reports) {
         let obj = {
           id: report._id,
+          state: report.state,
           date: report.date.split("T")[0],
           fieldId: report.fieldId,
           fieldName: this.fields.find((field) => report.fieldId == field.id)
@@ -705,27 +701,26 @@ export default {
           problemDescription: report.problemDescription,
           incidentLocation: report.incidentLocation,
           reportCode: report.reportCode,
+          reportedBy: (
+            await this.$store.dispatch("getTeamById", {
+              _id: report.reportedBy,
+            })
+          ).data.name,
         };
-        // this.$store.dispatch("getUserById", "qwfqwf");
         //fill teams
         obj.team = [];
         for (let t of report.team) {
           obj.team.push(t);
         }
         tempArr.push(obj);
+        console.log(obj);
       }
       return tempArr;
     },
-    async getReportsLikeReportCode(e) {
-      let reports = (
-        await this.$store.dispatch("getReportsLikeReportCode", {
-          value: e.target.value,
-        })
-      ).data;
-      this.reportCodes = [];
-      for (let r of reports) {
-        this.reportCodes.push({ rid: r._id, code: r.reportCodeValue });
-      }
+    viewModalMode(item) {
+      this.$store.commit("setTechnicianItem", { ...item });
+      this.$store.commit("setTechnicianMode", "view");
+      this.open();
     },
   },
 };

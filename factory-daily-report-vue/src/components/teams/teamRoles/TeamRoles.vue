@@ -27,11 +27,10 @@
           v-model="dialog"
           max-width="500px"
           @keydown.esc="dialog = false"
-          @keydown.enter="save"
         >
           <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
           <!-- </template> -->
-          <v-card v-if="dialog" @keyup.enter="addOrEditHandler">
+          <v-card v-if="dialog">
             <v-card-title>
               <span class="headline">{{ formTitle }}</span>
             </v-card-title>

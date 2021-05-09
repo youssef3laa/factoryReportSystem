@@ -8,6 +8,9 @@ export default {
   async editEquipment(store, payload) {
     return axios.post(`${urlPort}/equipments/update`, payload);
   },
+  async deleteEquipment(store, payload) {
+    return axios.post(`${urlPort}/equipments/delete`, payload);
+  },
   async getAllEquipments() {
     return await axios.get(`${urlPort}/equipments/`);
   },

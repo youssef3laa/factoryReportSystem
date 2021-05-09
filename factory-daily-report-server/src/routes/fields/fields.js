@@ -16,6 +16,6 @@ router.post("/create", fields.createField);
 
 router.post("/update", fields.updateField);
 
-router.post("/delete/:FieldId", fields.deleteField);
+router.post("/delete", fields.deleteField);
 
 module.exports = router;

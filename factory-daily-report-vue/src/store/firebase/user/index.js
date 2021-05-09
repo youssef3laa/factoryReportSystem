@@ -6,7 +6,6 @@ const { urlPort } = require("../../../utils/variables");
 Vue.use(VueCookies);
 const store = {
   state: {
-    isAuthenticated: false,
     user: null,
   },
   getters: getter,
@@ -22,8 +21,9 @@ const store = {
     async getUserDetailsById({ commit }, _id) {
       return (await axios.get(`${urlPort}/user/id`, { params: { _id } })).data;
     },
-    signOutUser(context, payload) {
+    signOutUser({ commit }, payload) {
       Vue.$cookies.remove("SYS_SEC_1D");
+      commit("signOutUser");
     },
   },
   mutations: {
@@ -31,9 +31,7 @@ const store = {
       state.user = user;
     },
     signOutUser(state, router) {
-      state.isAuthenticated = false;
       state.user = null;
-      router.replace({ name: "Login" });
     },
   },
 };

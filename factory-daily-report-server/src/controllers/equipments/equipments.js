@@ -8,7 +8,7 @@ exports.getAllEquipments = async (req, res) => {
   return res.send(
     await getDB()
       .collection("equipments")
-      .find()
+      .find({ isDeleted: false })
       .sort({ $natural: 1 })
       .toArray()
   );
@@ -50,6 +50,7 @@ exports.createEquipment = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let request = await getDB().collection("equipments").insertOne(req.body);
     let o = {
       userId: user._id,
@@ -101,4 +102,37 @@ exports.updateEquipment = async (req, res) => {
     );
   } else return res.status(404);
 };
-exports.deleteEquipment = async (req, res) => {};
+exports.deleteEquipment = async (req, res) => {
+  if (req.cookies["SYS_SEC_1D"]) {
+    let user = (
+      await axios.get(`${urlPort}/user/id`, {
+        params: { _id: req.cookies["SYS_SEC_1D"] },
+      })
+    ).data;
+    if (typeof user == "string") return res.status(404);
+    let o = {
+      userId: user._id,
+      actionTaken: "3",
+      table: "Equipments",
+      link: { name: "MachinesId", params: { id: req.body.id } },
+      timestamp: new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: true,
+      }).format(new Date()),
+    };
+    axios.post(`${urlPort}/logs/create`, o);
+    return res.send(
+      getDB()
+        .collection("equipments")
+        .updateOne(
+          { _id: ObjectID(req.body.id) },
+          { $set: { isDeleted: true } }
+        )
+    );
+  } else return res.status(404);
+};

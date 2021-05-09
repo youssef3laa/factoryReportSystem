@@ -168,8 +168,9 @@ const router = new VueRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  let user;
+  let user = store.getters.currentUser;
   let token = Vue.$cookies.get("SYS_SEC_1D");
+  // if (token && user && user.id == token) {
   if (token) {
     user = await store.dispatch("getUserDetailsById", token);
     if (user.message) {

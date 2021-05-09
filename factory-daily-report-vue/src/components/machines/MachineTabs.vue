@@ -11,7 +11,7 @@
         :key="m.id"
         @click="$emit('equipments_tabs_filter', m.id)"
       >
-        {{ m.name }}
+        {{ m.code }}
       </v-tab>
     </v-tabs>
   </v-card>
@@ -35,6 +35,13 @@ export default {
         let obj = {
           id: machine._id,
           name: machine.name_eng,
+          code: `${
+            (
+              await this.$store.dispatch("getFieldById", {
+                id: machine.fieldId,
+              })
+            ).data.code
+          }-${machine.code}`,
         };
         tempArr.push(obj);
       });

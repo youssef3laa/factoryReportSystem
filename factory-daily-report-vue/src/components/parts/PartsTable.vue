@@ -17,7 +17,7 @@
         <v-dialog v-model="dialog" max-width="500px">
           <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
           <!-- </template> -->
-          <v-card v-if="dialog" @keyup.enter="addOrEditHandler">
+          <v-card v-if="dialog">
             <v-card-title>
               <span class="headline">{{ formTitle }}</span>
             </v-card-title>
@@ -31,10 +31,11 @@
                         v-model="item.name"
                         label="Spare Part Code"
                         :rules="[rules.required]"
+                        :error-messages="partCodeErrors"
                       ></v-text-field>
                     </v-col>
                   </v-row>
-                  <v-row>
+                  <!-- <v-row>
                     <v-col cols="12">
                       <v-autocomplete
                         :items="machines"
@@ -46,7 +47,7 @@
                         :rules="[rules.required]"
                       ></v-autocomplete>
                     </v-col>
-                  </v-row>
+                  </v-row> -->
                   <v-row>
                     <v-col cols="6">
                       <v-autocomplete
@@ -116,11 +117,11 @@
             >
             <v-card-actions>
               <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="deleteConfirm"
+                >Yes</v-btn
+              >
               <v-btn color="blue darken-1" text @click="closeDelete"
                 >Cancel</v-btn
-              >
-              <v-btn color="blue darken-1" text @click="deleteConfirm"
-                >OK</v-btn
               >
               <v-spacer></v-spacer>
             </v-card-actions>
@@ -153,11 +154,12 @@
               ><span class="">Edit</span></v-list-item-title
             >
           </v-list-item>
-          <!-- <v-list-item @click="deleteModalMode(item)" link>
+          <v-list-item @click="deleteModalMode(item)" link>
             <v-list-item-title
-              ><v-icon small> mdi-delete </v-icon><span>Delete</span>
+              ><v-icon small class="mr-2"> mdi-delete </v-icon
+              ><span>Delete</span>
             </v-list-item-title>
-          </v-list-item> -->
+          </v-list-item>
         </v-list>
       </v-menu>
     </template>
@@ -191,7 +193,7 @@ export default {
           sortable: true,
           value: "name",
         },
-        { text: "Equipment", value: "machineName", sortable: true },
+        // { text: "Equipment", value: "machineName", sortable: true },
         { text: "Local Supplier", value: "localSupplierName", sortable: true },
         {
           text: "Global Supplier",
@@ -203,9 +205,12 @@ export default {
         { text: "Actions", value: "actions", sortable: false },
       ],
       parts: [],
-      machines: [],
+      // machines: [],
       suppliers: [],
       item: {},
+      tempItem: {},
+      partCodeErrors: [],
+      isCodeValid: false,
     };
   },
   computed: {
@@ -223,7 +228,7 @@ export default {
     currentItem() {
       return {
         name: this.item.name,
-        machineId: this.item.machineId,
+        // machineId: this.item.machineId,
         ...(!!this.item.localSupplierId && {
           localSupplierId: this.item.localSupplierId,
         }),
@@ -240,8 +245,27 @@ export default {
     },
   },
 
+  watch: {
+    "item.name": {
+      immediate: true,
+      async handler(newVal) {
+        if (!!newVal && newVal != this.tempItem.name) {
+          let code = (await this.checkPartCodeExists()).data;
+          if (code == "") this.partCodeErrors = "";
+          else
+            this.partCodeErrors =
+              "Spare Part Code '" + this.item.name + "' already exists";
+        }
+      },
+    },
+    dialog() {
+      if (this.$refs.form) this.$refs.form.reset();
+      this.partCodeErrors = "";
+    },
+  },
+
   async created() {
-    await this.loadMachineData();
+    // await this.loadMachineData();
     await this.loadSuppliersData();
     if (this.$route.params.id) {
       this.reloadPartsData("getSparePartById", {
@@ -262,10 +286,10 @@ export default {
         let obj = {
           id: part._id,
           name: part.name,
-          machineId: part.machineId,
-          machineName: this.machines.find(
-            (machine) => machine.id == part.machineId
-          ).name,
+          // machineId: part.machineId,
+          // machineName: this.machines.find(
+          //   (machine) => machine.id == part.machineId
+          // ).name,
           plant: part.plant,
           ...("localSupplierId" in part && {
             localSupplierId: part.localSupplierId,
@@ -288,18 +312,18 @@ export default {
       this.parts = tempArr;
       this.loader = false;
     },
-    async loadMachineData() {
-      let snapshot = (await this.$store.dispatch("getAllEquipments")).data;
-      let tempArr = [];
-      snapshot.map((machine) => {
-        let obj = {
-          id: machine._id,
-          name: machine.name_eng,
-        };
-        tempArr.push(obj);
-      });
-      this.machines = tempArr;
-    },
+    // async loadMachineData() {
+    //   let snapshot = (await this.$store.dispatch("getAllEquipments")).data;
+    //   let tempArr = [];
+    //   snapshot.map((machine) => {
+    //     let obj = {
+    //       id: machine._id,
+    //       name: machine.name_eng,
+    //     };
+    //     tempArr.push(obj);
+    //   });
+    //   this.machines = tempArr;
+    // },
     async loadSuppliersData() {
       let snapshot = (await this.$store.dispatch("getAllSuppliers")).data;
       let tempArr = [];
@@ -333,6 +357,7 @@ export default {
 
     editModalMode(item) {
       this.item = { ...item };
+      this.tempItem = { ...item };
       this.mode = false;
       this.open();
     },
@@ -356,13 +381,16 @@ export default {
     },
 
     deleteConfirm() {
-      this.partsRef
-        .doc(this.item.id)
-        .delete()
-        .then(() => {
-          this.closeDelete();
-          this.reloadPartsData("getAllSpareParts");
+      this.$store.dispatch("deleteSparePart", { id: this.item.id }).then(() => {
+        this.closeDelete();
+        this.$notify({
+          group: "mainActionsNotifications",
+          title: "Deleted!",
+          text: "Data has been deleted successfully.",
+          type: "success",
         });
+        this.reloadPartsData("getAllSpareParts");
+      });
     },
 
     open() {
@@ -378,13 +406,12 @@ export default {
 
     emptyItem() {
       this.item = Object.assign({});
+      this.tempItem = Object.assign({});
     },
-  },
-  directives: {
-    machineName: {
-      loaded: function (element) {
-        // your code goes here
-      },
+    async checkPartCodeExists() {
+      return await this.$store.dispatch("getSparePartByExactName", {
+        name: this.item.name,
+      });
     },
   },
 };

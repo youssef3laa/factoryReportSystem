@@ -8,6 +8,9 @@ export default {
   async editSparePart(store, payload) {
     return axios.post(`${urlPort}/sparePart/update`, payload);
   },
+  async deleteSparePart(store, payload) {
+    return axios.post(`${urlPort}/sparePart/delete`, payload);
+  },
   async getAllSpareParts() {
     return await axios.get(`${urlPort}/sparePart/`);
   },
@@ -21,11 +24,17 @@ export default {
       params: payload,
     });
   },
+  async getSparePartByExactName(store, payload) {
+    return await axios.get(`${urlPort}/sparePart/exactName`, {
+      params: payload,
+    });
+  },
   async getSparePartByEquipmentId(store, payload) {
     return await axios.get(`${urlPort}/sparePart/equipmentId`, {
       params: payload,
     });
   },
+
   async getFilteredSparePart(store, payload) {
     return await axios.get(`${urlPort}/sparePart/filter`, {
       params: payload,
