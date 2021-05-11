@@ -30,6 +30,7 @@ exports.getFilteredFields = async (req, res) => {
     if (o == "_id") req.query[o] = req.query[o].map((id) => ObjectID(id));
     query[o] = { $in: req.query[o] };
   }
+  query.isDeleted = false;
   return res.send(await getDB().collection("fields").find(query).toArray());
 };
 exports.createField = async (req, res) => {
@@ -69,6 +70,7 @@ exports.updateField = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let o = {
       userId: user._id,
       actionTaken: "2",

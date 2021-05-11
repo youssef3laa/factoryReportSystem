@@ -33,8 +33,18 @@
           <v-col cols="3">
             <v-card-title>Login</v-card-title>
           </v-col>
-          <v-col class="mt-2 red--text">
-            <v-card-text v-if="showErrorMsg">{{ errorMessage }} </v-card-text>
+          <v-col>
+            <v-card-text>
+              <v-chip
+                v-if="showErrorMsg"
+                label
+                text-color="red"
+                close
+                color="red lighten-4"
+                @click:close="closeErrorMessage"
+                >{{ errorMessage }}</v-chip
+              >
+            </v-card-text>
           </v-col>
         </v-row>
         <v-card-text @keyup.enter="login">
@@ -94,7 +104,7 @@ export default {
     email: "",
     password: "",
     showErrorMsg: false,
-    errorMessage: "E-mail or Password is incorrect!",
+    errorMessage: "Incorrect e-mail or password.",
   }),
   methods: {
     async login() {
@@ -107,6 +117,9 @@ export default {
       this.loading = false;
       if (response) this.$router.replace({ name: "Home" });
       else this.showErrorMsg = true;
+    },
+    closeErrorMessage() {
+      this.showErrorMsg = false;
     },
   },
 };

@@ -35,6 +35,7 @@ exports.createRole = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let request = await getDB().collection("teamRoles").insertOne(req.body);
     let o = {
       userId: user._id,
@@ -63,6 +64,7 @@ exports.updateRole = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let o = {
       userId: user._id,
       actionTaken: "2",

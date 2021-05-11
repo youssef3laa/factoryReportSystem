@@ -20,4 +20,8 @@ router.post("/delete", spareParts.deleteSparePart);
 
 router.get("/equipmentId", spareParts.getSparePartsByEquipmentId);
 
+router.get("/sparePartsLikeName", spareParts.getSparePartsLikeName);
+
+router.get("/filter", spareParts.getFilteredSpareParts);
+
 module.exports = router;

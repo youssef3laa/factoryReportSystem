@@ -20,4 +20,6 @@ router.post("/login", user.loginUser);
 
 router.post("/update", user.updateUser);
 
+router.post("/change-password", user.changePassword);
+
 module.exports = router;

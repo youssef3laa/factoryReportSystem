@@ -4,7 +4,7 @@
       :loading="loader"
       :headers="headers"
       :items="reports"
-      :item-class="c"
+      :item-class="rowColor"
       class="elevation-1"
     >
       <template v-slot:top>
@@ -34,205 +34,206 @@
         <v-dialog v-model="filterDialog" max-width="600px">
           <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
           <!-- </template> -->
-          <v-card>
-            <v-card-title>
-              <span class="headline">Filter Options</span>
-            </v-card-title>
+          <v-form v-model="filterValidate">
+            <v-card>
+              <v-card-title>
+                <span class="headline">Filter Options</span>
+              </v-card-title>
 
-            <v-card-text>
-              <v-container>
-                <v-row>
-                  <v-col cols="6">
-                    <v-menu
-                      ref="dateMenu"
-                      v-model="filterDateMenu"
-                      :close-on-content-click="false"
-                      :nudge-right="40"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="auto"
-                    >
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-text-field
-                          v-model.trim="filterOptions.date"
-                          label="Date"
-                          prepend-icon="mdi-calendar"
-                          readonly
-                          v-bind="attrs"
-                          v-on="on"
-                          clearable
-                          :rules="[rules.dateRange]"
-                        ></v-text-field>
-                      </template>
-                      <v-date-picker
-                        v-model="filterOptions.date"
-                        outlined
-                        range
-                        scrollable
+              <v-card-text>
+                <v-container>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-menu
+                        ref="dateMenu"
+                        v-model="filterDateMenu"
+                        :close-on-content-click="false"
+                        :nudge-right="40"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="auto"
                       >
-                        <v-spacer></v-spacer>
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="filterDateMenu = false"
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-text-field
+                            v-model.trim="filterOptions.date"
+                            label="Date"
+                            prepend-icon="mdi-calendar"
+                            readonly
+                            v-bind="attrs"
+                            v-on="on"
+                            clearable
+                            :rules="[rules.dateRangeOrEmpty]"
+                          ></v-text-field>
+                        </template>
+                        <v-date-picker
+                          v-model="filterOptions.date"
+                          outlined
+                          range
+                          scrollable
                         >
-                          CLOSE
-                        </v-btn></v-date-picker
+                          <v-spacer></v-spacer>
+                          <v-btn
+                            text
+                            color="primary"
+                            @click="filterDateMenu = false"
+                          >
+                            CLOSE
+                          </v-btn></v-date-picker
+                        >
+                      </v-menu>
+                    </v-col>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="fields"
+                        label="Field"
+                        v-model.trim="filterOptions.fieldId"
+                        color="blue-grey lighten-2"
+                        item-text="name"
+                        item-value="id"
+                        chips
+                        multiple
+                        deletable-chips
                       >
-                    </v-menu>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="fields"
-                      label="Field"
-                      v-model.trim="filterOptions.fieldId"
-                      color="blue-grey lighten-2"
-                      item-text="name"
-                      item-value="id"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.name }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.fieldId.length - 1 }}
-                          others)
-                        </span>
-                      </template></v-autocomplete
-                    >
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="allMachines"
-                      label="Equipment"
-                      v-model.trim="filterOptions.machineId"
-                      color="blue-grey lighten-2"
-                      item-text="name"
-                      item-value="id"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.name }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.machineId.length - 1 }}
-                          others)
-                        </span>
-                      </template></v-autocomplete
-                    >
-                  </v-col>
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="statusList"
-                      v-model.trim="filterOptions.statusId"
-                      label="Status"
-                      item-text="name"
-                      item-value="id"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.name }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.statusId.length - 1 }}
-                          others)
-                        </span>
-                      </template>
-                    </v-autocomplete>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12">
-                    <v-autocomplete
-                      v-model.trim="filterOptions.incidentLocation"
-                      :items="incidentLocationList"
-                      label="Incident Location"
-                      aria-rowspan="5"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.incidentLocation.length - 1 }}
-                          others)
-                        </span>
-                      </template></v-autocomplete
-                    >
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12">
-                    <v-autocomplete
-                      v-model.trim="filterOptions.problemDescription"
-                      :items="problemDescriptionList"
-                      label="Problem Description"
-                      aria-rowspan="5"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.problemDescription.length - 1 }}
-                          others)
-                        </span>
-                      </template></v-autocomplete
-                    >
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="allParts"
-                      v-model.trim="filterOptions.partsDetails[0].partCode"
-                      label="Spare Part Code"
-                      item-text="name"
-                      item-value="id"
-                      chips
-                      multiple
-                      clearable
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.name }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{
-                            filterOptions.partsDetails[0].partCode.length - 1
-                          }}
-                          others)
-                        </span>
-                      </template>
-                    </v-autocomplete>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-combobox
-                      v-model="filterOptions.partsDetails[0].quantity"
-                      label="Quantity"
-                      small-chips
-                      multiple
-                      :rules="[rules.numberArray]"
-                    >
-                      <!-- <template v-slot:no-data>
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.name }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.fieldId.length - 1 }}
+                            others)
+                          </span>
+                        </template></v-autocomplete
+                      >
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="allMachines"
+                        label="Equipment"
+                        v-model.trim="filterOptions.machineId"
+                        color="blue-grey lighten-2"
+                        item-text="name"
+                        item-value="id"
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.name }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.machineId.length - 1 }}
+                            others)
+                          </span>
+                        </template></v-autocomplete
+                      >
+                    </v-col>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="statusList"
+                        v-model.trim="filterOptions.statusId"
+                        label="Status"
+                        item-text="name"
+                        item-value="id"
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.name }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.statusId.length - 1 }}
+                            others)
+                          </span>
+                        </template>
+                      </v-autocomplete>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-autocomplete
+                        v-model.trim="filterOptions.incidentLocation"
+                        :items="incidentLocationList"
+                        label="Incident Location"
+                        aria-rowspan="5"
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.incidentLocation.length - 1 }}
+                            others)
+                          </span>
+                        </template></v-autocomplete
+                      >
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-autocomplete
+                        v-model.trim="filterOptions.problemDescription"
+                        :items="problemDescriptionList"
+                        label="Problem Description"
+                        aria-rowspan="5"
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.problemDescription.length - 1 }}
+                            others)
+                          </span>
+                        </template></v-autocomplete
+                      >
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="allParts"
+                        v-model.trim="filterOptions.partsDetails[0].partCode"
+                        label="Spare Part Code"
+                        item-text="name"
+                        item-value="id"
+                        chips
+                        multiple
+                        clearable
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.name }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{
+                              filterOptions.partsDetails[0].partCode.length - 1
+                            }}
+                            others)
+                          </span>
+                        </template>
+                      </v-autocomplete>
+                    </v-col>
+                    <v-col cols="6">
+                      <v-combobox
+                        v-model="filterOptions.partsDetails[0].quantity"
+                        label="Quantity"
+                        small-chips
+                        multiple
+                        :rules="[rules.numberArray]"
+                      >
+                        <!-- <template v-slot:no-data>
                         <v-list-item>
                           <v-list-item-content>
                             <v-list-item-title>
@@ -242,118 +243,123 @@
                           </v-list-item-content>
                         </v-list-item>
                       </template> -->
-                    </v-combobox>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12 ">
-                    <v-autocomplete
-                      :items="allParts"
-                      v-model="filterOptions.partsDetails[0].partCode"
-                      label="Spare Part Description"
-                      item-text="partDescription"
-                      item-value="id"
-                      clearable
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.partDescription }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{
-                            filterOptions.partsDetails[0].partCode.length - 1
-                          }}
-                          others)
-                        </span>
-                      </template>
-                    </v-autocomplete>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="teamsList"
-                      v-model="filterOptions.team"
-                      label="Teams"
-                      item-text="name"
-                      item-value="id"
-                      multiple
-                      chips
-                    >
-                      <template v-slot:selection="data">
-                        <v-chip
-                          v-bind="data.attrs"
-                          :input-value="data.selected"
-                          close
-                          @click="data.select"
-                          @click:close="remove(data.item.id)"
-                        >
-                          {{ data.item.name }}
-                        </v-chip>
-                      </template>
-                      <template v-slot:item="data">
-                        <template v-if="data.item != 'object'">
-                          <v-list-item-content
-                            v-text="data.item.name"
-                          ></v-list-item-content>
+                      </v-combobox>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12 ">
+                      <v-autocomplete
+                        :items="allParts"
+                        v-model="filterOptions.partsDetails[0].partCode"
+                        label="Spare Part Description"
+                        item-text="partDescription"
+                        item-value="id"
+                        clearable
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.partDescription }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{
+                              filterOptions.partsDetails[0].partCode.length - 1
+                            }}
+                            others)
+                          </span>
                         </template>
-                        <template v-else>
-                          <v-list-item-avatar>
-                            <img :src="data.item.avatar" />
-                          </v-list-item-avatar>
-                          <v-list-item-content>
-                            <v-list-item-title
-                              v-html="data.item.name"
-                            ></v-list-item-title>
-                            <v-list-item-subtitle
-                              v-html="data.item.group"
-                            ></v-list-item-subtitle>
-                          </v-list-item-content>
+                      </v-autocomplete>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="teamsList"
+                        v-model="filterOptions.team"
+                        label="Teams"
+                        item-text="name"
+                        item-value="id"
+                        multiple
+                        chips
+                      >
+                        <template v-slot:selection="data">
+                          <v-chip
+                            v-bind="data.attrs"
+                            :input-value="data.selected"
+                            close
+                            @click="data.select"
+                            @click:close="removeFilter(data.item.id)"
+                          >
+                            {{ data.item.name }}
+                          </v-chip>
                         </template>
-                      </template>
-                    </v-autocomplete>
-                  </v-col>
+                        <template v-slot:item="data">
+                          <template v-if="data.item != 'object'">
+                            <v-list-item-content
+                              v-text="data.item.name"
+                            ></v-list-item-content>
+                          </template>
+                          <template v-else>
+                            <v-list-item-content>
+                              <v-list-item-title
+                                v-html="data.item.name"
+                              ></v-list-item-title>
+                              <v-list-item-subtitle
+                                v-html="data.item.group"
+                              ></v-list-item-subtitle>
+                            </v-list-item-content>
+                          </template>
+                        </template>
+                      </v-autocomplete>
+                    </v-col>
 
-                  <v-col cols="6">
-                    <v-autocomplete
-                      :items="typeList"
-                      v-model.trim="filterOptions.typeId"
-                      label="Type"
-                      item-text="name"
-                      item-value="id"
-                      chips
-                      multiple
-                      deletable-chips
-                    >
-                      <template v-slot:selection="{ item, index }">
-                        <v-chip v-if="index === 0">
-                          <span>{{ item.name }}</span>
-                        </v-chip>
-                        <span v-if="index === 1" class="grey--text caption">
-                          (+{{ filterOptions.typeId.length - 1 }}
-                          others)
-                        </span>
-                      </template>
-                    </v-autocomplete>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-card-text>
+                    <v-col cols="6">
+                      <v-autocomplete
+                        :items="typeList"
+                        v-model.trim="filterOptions.typeId"
+                        label="Type"
+                        item-text="name"
+                        item-value="id"
+                        chips
+                        multiple
+                        deletable-chips
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index === 0">
+                            <span>{{ item.name }}</span>
+                          </v-chip>
+                          <span v-if="index === 1" class="grey--text caption">
+                            (+{{ filterOptions.typeId.length - 1 }}
+                            others)
+                          </span>
+                        </template>
+                      </v-autocomplete>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-card-text>
 
-            <v-card-actions>
-              <v-btn color="blue darken-1" text @click="clearFilterDialog">
-                Clear
-              </v-btn>
-              <v-spacer></v-spacer>
-              <v-btn color="blue darken-1" text @click="closeFilterDialog">
-                Close
-              </v-btn>
-              <v-btn color="blue darken-1" text @click="filter"> Filter </v-btn>
-            </v-card-actions>
-          </v-card>
+              <v-card-actions>
+                <v-btn color="blue darken-1" text @click="clearFilterDialog">
+                  Clear
+                </v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" text @click="closeFilterDialog">
+                  Close
+                </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  :disabled="!filterValidate"
+                  text
+                  @click="filter"
+                >
+                  Filter
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-form>
         </v-dialog>
         <v-dialog
           v-model.trim="dialog"
@@ -575,9 +581,6 @@
                           ></v-list-item-content>
                         </template>
                         <template v-else>
-                          <v-list-item-avatar>
-                            <img :src="data.item.avatar" />
-                          </v-list-item-avatar>
                           <v-list-item-content>
                             <v-list-item-title
                               v-html="data.item.name"
@@ -741,7 +744,12 @@
 
         <v-menu bottom left>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn color="grey" icon v-bind="attrs" v-on="on">
+            <v-btn
+              :color="item.typeId == 3 ? 'white' : 'grey'"
+              icon
+              v-bind="attrs"
+              v-on="on"
+            >
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
@@ -749,7 +757,7 @@
           <v-list>
             <v-list-item @click="viewModalMode(item)" link>
               <v-list-item-title
-                ><v-icon small class="mr-2"> mdi-arrow-expand-all </v-icon
+                ><v-icon small class="mr-2"> fa-expand </v-icon
                 ><span class="">View</span></v-list-item-title
               >
             </v-list-item>
@@ -797,6 +805,7 @@ export default {
   data() {
     return {
       validate: null,
+      filterValidate: null,
       rules,
       loader: true,
       time: null,
@@ -974,7 +983,7 @@ export default {
     await this.loadAllParts();
     await this.loadAllTeams();
     if (this.$route.params.id) {
-      this.reports = this.normalizeReturnedReports([
+      this.reports = await this.normalizeReturnedReports([
         await this.getReportById(this.$route.params.id),
       ]);
     } else if (this.$route.query.trid) {
@@ -982,7 +991,7 @@ export default {
     } else this.reloadReports();
   },
   methods: {
-    c(item) {
+    rowColor(item) {
       return item.typeId == 3 ? "white--text red" : "";
     },
     async getReportById(id) {
@@ -1162,6 +1171,10 @@ export default {
       const index = this.item.team.indexOf(item);
       if (index >= 0) this.item.team.splice(index, 1);
     },
+    removeFilter(item) {
+      const index = this.filterOptions.team.indexOf(item);
+      if (index >= 0) this.filterOptions.team.splice(index, 1);
+    },
     removePartSection(index) {
       this.item.partsDetails.splice(index, 1);
     },
@@ -1202,7 +1215,7 @@ export default {
     async filter() {
       this.loader = true;
       this.closeFilterDialog();
-      this.reports = this.normalizeReturnedReports(
+      this.reports = await this.normalizeReturnedReports(
         (await this.$store.dispatch("getFilteredReports", this.filterOptions))
           .data
       );

@@ -25,6 +25,9 @@ const store = {
       Vue.$cookies.remove("SYS_SEC_1D");
       commit("signOutUser");
     },
+    async changePassword(state, payload) {
+      return await axios.post(`${urlPort}/user/change-password`, payload);
+    },
   },
   mutations: {
     authenticate(state, user) {

@@ -17,8 +17,10 @@ export function english(v) {
 export function number(v) {
   return !isNaN(v) || "Field accepts numbers only";
 }
-export function dateRange(v) {
-  return (Array.isArray(v) && v.length > 1) || "Field accepts date ranges only";
+export function dateRangeOrEmpty(v) {
+  return (
+    !v || (Array.isArray(v) && v.length > 1) || "Field accepts date ranges only"
+  );
 }
 export function numberArray(v) {
   return (

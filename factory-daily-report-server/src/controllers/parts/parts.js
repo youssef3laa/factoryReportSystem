@@ -26,6 +26,15 @@ exports.getSparePartByName = async (req, res) => {
       .toArray()
   );
 };
+exports.getSparePartsLikeName = async (req, res) => {
+  let query = {
+    name: { $regex: `.*${req.query.value}.*`, $options: "i" },
+    isDeleted: false,
+  };
+  return res.send(
+    await getDB().collection("spareParts").find(query).limit(5).toArray()
+  );
+};
 exports.getSparePartByExactName = async (req, res) => {
   return res.send(
     await getDB()
@@ -35,6 +44,14 @@ exports.getSparePartByExactName = async (req, res) => {
         isDeleted: false,
       })
   );
+};
+exports.getFilteredSpareParts = async (req, res) => {
+  let query = {};
+  for (let o in req.query) {
+    query[o] = { $in: req.query[o] };
+  }
+  query.isDeleted = false;
+  return res.send(await getDB().collection("spareParts").find(query).toArray());
 };
 exports.getSparePartsByEquipmentId = async (req, res) => {
   return res.send(
@@ -81,6 +98,7 @@ exports.updateSparePart = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let o = {
       userId: user._id,
       actionTaken: "2",

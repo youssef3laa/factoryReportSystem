@@ -11,9 +11,107 @@
       <v-toolbar flat>
         <v-toolbar-title>Parts</v-toolbar-title>
         <v-spacer></v-spacer>
+        <v-btn
+          right
+          color="grey darken-1"
+          dark
+          class="mb-2 mr-10 d-flex justify-end"
+          @click="openFilterModal"
+        >
+          Filter
+        </v-btn>
         <v-btn color="primary" dark class="mb-2" @click="addModalMode">
           Add Spare Part
         </v-btn>
+        <v-dialog v-model="filterDialog" max-width="500px">
+          <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
+          <!-- </template> -->
+          <v-card v-if="filterDialog" @keyup.enter="filter">
+            <v-card-title>
+              <span class="headline">Filter Options</span>
+            </v-card-title>
+
+            <v-card-text>
+              <v-container>
+                <v-row>
+                  <v-col cols="12 ">
+                    <v-combobox
+                      @keyup="getSparePartsLikeName($event)"
+                      :items="filterSpareParts"
+                      item-text="name"
+                      item-value="id"
+                      label="Spare Part Code"
+                      v-model.trim="filterOptions.name"
+                      color="blue-grey lighten-2"
+                      multiple
+                    ></v-combobox>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col cols="12">
+                    <v-autocomplete
+                      :items="localSuppliers"
+                      label="Local Supplier"
+                      v-model.trim="filterOptions.localSupplierId"
+                      color="blue-grey lighten-2"
+                      item-text="name"
+                      item-value="id"
+                      chips
+                      multiple
+                      deletable-chips
+                    >
+                      <template v-slot:selection="{ item, index }">
+                        <v-chip v-if="index === 0">
+                          <span>{{ item.name }}</span>
+                        </v-chip>
+                        <span v-if="index === 1" class="grey--text caption">
+                          (+{{ filterOptions.localSupplierId.length - 1 }}
+                          others)
+                        </span>
+                      </template></v-autocomplete
+                    >
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col cols="12">
+                    <v-autocomplete
+                      :items="globalSuppliers"
+                      label="Global Supplier"
+                      v-model.trim="filterOptions.globalSupplierId"
+                      color="blue-grey lighten-2"
+                      item-text="name"
+                      item-value="id"
+                      chips
+                      multiple
+                      deletable-chips
+                    >
+                      <template v-slot:selection="{ item, index }">
+                        <v-chip v-if="index === 0">
+                          <span>{{ item.name }}</span>
+                        </v-chip>
+                        <span v-if="index === 1" class="grey--text caption">
+                          (+{{ filterOptions.globalSupplierId.length - 1 }}
+                          others)
+                        </span>
+                      </template></v-autocomplete
+                    >
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn color="blue darken-1" text @click="emptyFilterOptions">
+                Clear
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="closeFilterModal">
+                Cancel
+              </v-btn>
+              <v-btn color="blue darken-1" text @click="filter"> Filter </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
         <v-dialog v-model="dialog" max-width="500px">
           <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
           <!-- </template> -->
@@ -183,6 +281,7 @@ export default {
       rules,
       loader: true,
       expanded: [],
+      filterDialog: false,
       dialog: false,
       dialogDelete: false,
       mode: true, //add = true, edit = false
@@ -209,6 +308,8 @@ export default {
       suppliers: [],
       item: {},
       tempItem: {},
+      filterOptions: {},
+      filterSpareParts: [],
       partCodeErrors: [],
       isCodeValid: false,
     };
@@ -265,7 +366,6 @@ export default {
   },
 
   async created() {
-    // await this.loadMachineData();
     await this.loadSuppliersData();
     if (this.$route.params.id) {
       this.reloadPartsData("getSparePartById", {
@@ -275,6 +375,20 @@ export default {
   },
 
   methods: {
+    async getSparePartsLikeName(e) {
+      let parts = (
+        await this.$store.dispatch("getSparePartsLikeName", {
+          value: e.target.value,
+        })
+      ).data;
+      this.filterSpareParts = [];
+      for (let part of parts) {
+        this.filterSpareParts.push({ id: part._id, name: part.name });
+      }
+    },
+    emptyFilterOptions() {
+      this.filterOptions = {};
+    },
     async reloadPartsData(dispatch, payload) {
       this.loader = true;
       let snapshot = (await this.$store.dispatch(dispatch, payload)).data;
@@ -282,6 +396,7 @@ export default {
       let arr = [];
       if (Array.isArray(snapshot)) arr = snapshot;
       else arr.push(snapshot);
+      console.log(arr);
       arr.map((part) => {
         let obj = {
           id: part._id,
@@ -412,6 +527,18 @@ export default {
       return await this.$store.dispatch("getSparePartByExactName", {
         name: this.item.name,
       });
+    },
+    openFilterModal() {
+      this.filterDialog = true;
+    },
+    closeFilterModal() {
+      this.filterDialog = false;
+    },
+    async filter() {
+      this.loader = true;
+      this.reloadPartsData("getFilteredSpareParts", this.filterOptions);
+      this.closeFilterModal();
+      this.loader = false;
     },
   },
 };

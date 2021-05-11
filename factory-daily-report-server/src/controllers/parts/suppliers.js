@@ -6,7 +6,11 @@ const Intl = require("intl");
 
 exports.getAllSuppliers = async (req, res) => {
   return res.send(
-    await getDB().collection("suppliers").find().sort({ $natural: 1 }).toArray()
+    await getDB()
+      .collection("suppliers")
+      .find({ isDeleted: false })
+      .sort({ $natural: 1 })
+      .toArray()
   );
 };
 exports.getSupplierById = async (req, res) => {
@@ -24,6 +28,7 @@ exports.getFilteredSuppliers = async (req, res) => {
       query[o] = { $regex: `.*${req.query[o]}.*` };
     }
   }
+  query.isDeleted = false;
   return res.send(await getDB().collection("suppliers").find(query).toArray());
 };
 exports.getSupplierByName = async (req, res) => {
@@ -42,6 +47,7 @@ exports.createSupplier = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let request = await getDB().collection("suppliers").insertOne(req.body);
     let o = {
       userId: user._id,
@@ -70,6 +76,7 @@ exports.updateSupplier = async (req, res) => {
       })
     ).data;
     if (typeof user == "string") return res.status(404);
+    req.body.isDeleted = false;
     let o = {
       userId: user._id,
       actionTaken: "2",
@@ -93,4 +100,37 @@ exports.updateSupplier = async (req, res) => {
     );
   } else return res.status(404);
 };
-exports.deleteSupplier = async (req, res) => {};
+exports.deleteSupplier = async (req, res) => {
+  if (req.cookies["SYS_SEC_1D"]) {
+    let user = (
+      await axios.get(`${urlPort}/user/id`, {
+        params: { _id: req.cookies["SYS_SEC_1D"] },
+      })
+    ).data;
+    if (typeof user == "string") return res.status(404);
+    let o = {
+      userId: user._id,
+      actionTaken: "3",
+      table: "Suppliers",
+      link: { name: "ReportId", params: { id: req.body.id } },
+      timestamp: new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: true,
+      }).format(new Date()),
+    };
+    axios.post(`${urlPort}/logs/create`, o);
+    return res.send(
+      getDB()
+        .collection("suppliers")
+        .updateOne(
+          { _id: ObjectID(req.body.id) },
+          { $set: { isDeleted: true } }
+        )
+    );
+  } else return res.status(404);
+};

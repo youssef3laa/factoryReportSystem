@@ -65,26 +65,24 @@ export default {
       let tempArr = [];
       let reports = (await this.$store.dispatch("getAllReports")).data;
       for (let report of reports) {
+        let field = await this.$store.dispatch("getFieldById", {
+          id: report.reportCode.split("-")[0],
+        });
+        let equipment = await this.$store.dispatch("getEquipmentById", {
+          id: report.machineId,
+        });
+
         let obj = {
-          equipmentName: (
-            await this.$store.dispatch("getEquipmentById", {
-              id: report.machineId,
-            })
-          ).data.name_eng,
+          equipmentName: equipment.data.name_eng,
           problemDescription: report.problemDescription,
-          reportCode: report.reportCodeValue,
+          reportCode: `${field.data.code}-${equipment.data.code}-${
+            report.reportCode.split("-")[2]
+          }`,
         };
         tempArr.push(obj);
       }
       this.reports = tempArr;
       this.loader = false;
-    },
-  },
-  directives: {
-    machineName: {
-      loaded: function (element) {
-        // your code goes here
-      },
     },
   },
 };

@@ -96,6 +96,7 @@ exports.createReport = async (req, res) => {
     req.body.reportCode += reportNumber;
     req.body.reportCodeValue += reportNumber;
     req.body.reportedBy = user._id;
+    req.body.isDeleted = false;
     let request = await getDB().collection("reports").insertOne(req.body);
     let o = {
       userId: user._id,
@@ -152,6 +153,7 @@ exports.updateReport = async (req, res) => {
       }).format(new Date()),
     };
     axios.post(`${urlPort}/logs/create`, o);
+    req.body.isDeleted = false;
     return res.send(
       getDB()
         .collection("reports")

@@ -8,6 +8,9 @@ export default {
   async editSupplier(store, payload) {
     return axios.post(`${urlPort}/suppliers/update`, payload);
   },
+  async deleteSupplier(store, payload) {
+    return axios.post(`${urlPort}/suppliers/delete`, payload);
+  },
   async getAllSuppliers() {
     return await axios.get(`${urlPort}/suppliers/`);
   },

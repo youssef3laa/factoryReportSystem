@@ -14,6 +14,11 @@ export default {
   async getAllSpareParts() {
     return await axios.get(`${urlPort}/sparePart/`);
   },
+  async getSparePartsLikeName(store, payload) {
+    return await axios.get(`${urlPort}/sparePart/sparePartsLikeName`, {
+      params: payload,
+    });
+  },
   async getSparePartById(store, payload) {
     return await axios.get(`${urlPort}/sparePart/id`, {
       params: payload,
@@ -34,8 +39,8 @@ export default {
       params: payload,
     });
   },
-
-  async getFilteredSparePart(store, payload) {
+  async getFilteredSpareParts(store, payload) {
+    console.log(payload);
     return await axios.get(`${urlPort}/sparePart/filter`, {
       params: payload,
     });

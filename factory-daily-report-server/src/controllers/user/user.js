@@ -14,7 +14,7 @@ exports.getUserById = async (req, res) => {
   let user = await getDB().collection("users").findOne(ObjectID(req.query._id));
   if (user) {
     let { password, ...data } = user;
-    res.send(data);
+    res.send(req.query.returnPassword ? user : data);
   } else {
     res.send({ message: "error" });
   }
@@ -94,6 +94,30 @@ exports.updateUser = async (req, res) => {
         .collection("users")
         .updateOne({ _id: ObjectID(req.body.id) }, { $set: update })
     );
+  } else return res.status(404);
+};
+exports.changePassword = async (req, res) => {
+  if (req.cookies["SYS_SEC_1D"]) {
+    let user = (
+      await axios.get(`${urlPort}/user/id`, {
+        params: { _id: req.cookies["SYS_SEC_1D"], returnPassword: true },
+      })
+    ).data;
+    if (typeof user == "string") return res.status(404);
+    if (await bcrypt.compare(req.body.oldPassword, user.password)) {
+      const salt = await bcrypt.genSalt(10);
+      req.body.password = await bcrypt.hash(req.body.password, salt);
+      return res.send(
+        getDB()
+          .collection("users")
+          .updateOne(
+            { _id: ObjectID(user._id) },
+            { $set: { password: req.body.password } }
+          )
+      );
+    } else {
+      return res.status(200).send({ message: "error" });
+    }
   } else return res.status(404);
 };
 exports.getFilteredUsers = async (req, res) => {

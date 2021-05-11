@@ -14,7 +14,7 @@ router.post("/create", suppliers.createSupplier);
 
 router.post("/update", suppliers.updateSupplier);
 
-router.post("/delete/:SupplierId", suppliers.deleteSupplier);
+router.post("/delete", suppliers.deleteSupplier);
 
 router.get("/filter", suppliers.getFilteredSuppliers);
 

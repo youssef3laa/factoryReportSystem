@@ -78,17 +78,24 @@
       ></v-img>
       <!-- <v-toolbar-title>{{ factoryName }}</v-toolbar-title> -->
       <v-spacer></v-spacer>
-      <div class="mr-16">
-        {{ currentUser.name ? `Hi, ${currentUser.name}` : "" }}
+      <div>
+        {{ currentUser.name ? `Welcome, ${currentUser.name}` : "" }}
       </div>
-      <v-btn icon medium class="pr-10" @click="logout">
-        Logout
-        <v-icon>mdi-lock-open</v-icon>
-      </v-btn>
-      <!-- <v-btn v-else icon medium :to="{ name: 'Login' }"
-        >Login
-        <v-icon>mdi-lock-open-variant</v-icon>
-      </v-btn> -->
+      <v-menu offset-y>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn icon v-bind="attrs" v-on="on">
+            <v-icon>fa-angle-down </v-icon>
+          </v-btn>
+        </template>
+
+        <v-list>
+          <v-list-item link v-for="(item, i) in rightSideMenuOptions" :key="i">
+            <v-list-item-title @click="item.method">{{
+              item.title
+            }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
     </v-app-bar>
     <technician-add-report ref="techModal"></technician-add-report>
   </v-app>
@@ -107,6 +114,7 @@ export default {
   data: () => ({
     drawer: false,
     factoryName: "Taghleef Industries Report System",
+    rightSideMenuOptions: [],
     options: [
       {
         icon: "mdi-file-chart",
@@ -169,6 +177,7 @@ export default {
   },
   async created() {
     this.$store.dispatch("getTechReportsCount");
+    this.fillRightSideOptions();
   },
   methods: {
     showTechReportsModal() {
@@ -178,6 +187,15 @@ export default {
     logout() {
       this.$store.dispatch("signOutUser");
       this.$router.replace({ name: "Login" });
+    },
+    changePasswordRoute() {
+      this.$router.replace({ name: "ChangePassword" });
+    },
+    fillRightSideOptions() {
+      this.rightSideMenuOptions = [
+        { title: "Change Password", method: this.changePasswordRoute },
+        { title: "Logout", method: this.logout },
+      ];
     },
   },
 };

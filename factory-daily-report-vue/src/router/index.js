@@ -14,6 +14,7 @@ import NotFound from "../views/NotFound.vue";
 import Login from "../views/LoginView.vue";
 import ReportCodes from "../components/reports/ReportCodes.vue";
 import TechnicianReports from "../components/reports/TechnicianReports/TechnicianReports.vue";
+import ChangePassword from "../views/ChangePassword.vue";
 import store from "../store/index";
 Vue.use(VueRouter);
 
@@ -152,6 +153,12 @@ const routes = [
     path: "/logs",
     name: "Logs",
     component: Logs,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/account/change-password",
+    name: "ChangePassword",
+    component: ChangePassword,
     meta: { requiresAuth: true },
   },
   {
