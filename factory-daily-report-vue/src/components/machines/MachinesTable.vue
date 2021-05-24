@@ -143,14 +143,14 @@
           <v-dialog v-model="dialog" max-width="500px">
             <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
             <!-- </template> -->
-            <v-card v-if="dialog">
+            <v-card v-if="dialog" @keyup.enter="submit">
               <v-card-title>
                 <span class="headline">{{ formTitle }}</span>
               </v-card-title>
 
               <v-card-text>
                 <v-container>
-                  <v-form v-model="validate">
+                  <v-form v-model="validate" @keyup.enter="submit">
                     <v-row>
                       <v-col cols="12 ">
                         <v-text-field
@@ -341,6 +341,13 @@ export default {
   },
 
   methods: {
+    submit() {
+      console.log("here");
+      if (this.validate) {
+        if (this.mode) this.add();
+        else this.editItem();
+      }
+    },
     async reloadMachinesData(dispatch, payload) {
       this.loader = true;
       this.machines = [];
@@ -417,7 +424,8 @@ export default {
     editItem() {
       this.currentItem.id = this.item.id;
       this.$store.dispatch("editEquipment", this.currentItem).then(() => {
-        this.reloadMachinesData("getAllEquipments");
+        // this.reloadMachinesData("getAllEquipments");
+        this.filter();
         this.close();
         this.$notify({
           group: "mainActionsNotifications",

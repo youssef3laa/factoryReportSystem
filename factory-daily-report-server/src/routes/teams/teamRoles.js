@@ -14,6 +14,6 @@ router.post("/create", teamRoles.createRole);
 
 router.post("/update", teamRoles.updateRole);
 
-router.post("/delete/:roleId", teamRoles.deleteRole);
+router.post("/delete", teamRoles.deleteRole);
 
 module.exports = router;

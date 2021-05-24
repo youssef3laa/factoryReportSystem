@@ -115,7 +115,7 @@
         <v-dialog v-model="dialog" max-width="500px">
           <!-- <template v-slot:activator="{ on: addModalMode, attrs }"> -->
           <!-- </template> -->
-          <v-card v-if="dialog">
+          <v-card v-if="dialog" @keyup.enter="submit">
             <v-card-title>
               <span class="headline">{{ formTitle }}</span>
             </v-card-title>
@@ -272,7 +272,11 @@ export default {
       filterOptions: {},
     };
   },
-
+  watch: {
+    validate(val) {
+      console.log(val);
+    },
+  },
   computed: {
     formTitle() {
       return this.mode ? "Add Field" : "Edit Field";
@@ -299,6 +303,12 @@ export default {
   },
 
   methods: {
+    submit() {
+      if (this.validate) {
+        if (this.mode) this.add();
+        else this.editItem();
+      }
+    },
     async reloadFieldsData(dispatch, payload) {
       this.loader = true;
       let snapshot = (await this.$store.dispatch(dispatch, payload)).data;

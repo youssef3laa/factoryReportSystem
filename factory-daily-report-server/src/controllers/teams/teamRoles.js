@@ -6,7 +6,11 @@ const Intl = require("intl");
 
 exports.getAllRoles = async (req, res) => {
   return res.send(
-    await getDB().collection("teamRoles").find().sort({ $natural: 1 }).toArray()
+    await getDB()
+      .collection("teamRoles")
+      .find({ isDeleted: false })
+      .sort({ $natural: 1 })
+      .toArray()
   );
 };
 exports.getRoleById = async (req, res) => {
@@ -88,4 +92,37 @@ exports.updateRole = async (req, res) => {
     );
   } else return res.status(404);
 };
-exports.deleteRole = async (req, res) => {};
+exports.deleteRole = async (req, res) => {
+  if (req.cookies["SYS_SEC_1D"]) {
+    let user = (
+      await axios.get(`${urlPort}/user/id`, {
+        params: { _id: req.cookies["SYS_SEC_1D"] },
+      })
+    ).data;
+    if (typeof user == "string") return res.status(404);
+    let o = {
+      userId: user._id,
+      actionTaken: "3",
+      table: "Team Roles",
+      link: { name: "TeamRolesId", params: { id: req.body.id } },
+      timestamp: new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: true,
+      }).format(new Date()),
+    };
+    axios.post(`${urlPort}/logs/create`, o);
+    return res.send(
+      getDB()
+        .collection("teamRoles")
+        .updateOne(
+          { _id: ObjectID(req.body.id) },
+          { $set: { isDeleted: true } }
+        )
+    );
+  } else return res.status(404);
+};

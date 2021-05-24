@@ -7,7 +7,12 @@ const Intl = require("intl");
 
 exports.getAllUsers = async (req, res) => {
   return res.send(
-    await getDB().collection("users").find().sort({ $natural: 1 }).toArray()
+    await getDB()
+      .collection("users")
+      .find({})
+      .project({ password: 0 })
+      .sort({ $natural: 1 })
+      .toArray()
   );
 };
 exports.getUserById = async (req, res) => {

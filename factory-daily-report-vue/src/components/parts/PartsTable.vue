@@ -396,8 +396,7 @@ export default {
       let arr = [];
       if (Array.isArray(snapshot)) arr = snapshot;
       else arr.push(snapshot);
-      console.log(arr);
-      arr.map((part) => {
+      arr.map(async (part) => {
         let obj = {
           id: part._id,
           name: part.name,
@@ -408,15 +407,19 @@ export default {
           plant: part.plant,
           ...("localSupplierId" in part && {
             localSupplierId: part.localSupplierId,
-            localSupplierName: this.suppliers.find(
-              (s) => s.id == part.localSupplierId
-            ).name,
+            localSupplierName: (
+              await this.$store.dispatch("getSupplierById", {
+                id: part.localSupplierId,
+              })
+            ).data.name,
           }),
           ...("globalSupplierId" in part && {
             globalSupplierId: part.globalSupplierId,
-            globalSupplierName: this.suppliers.find(
-              (s) => s.id == part.globalSupplierId
-            ).name,
+            globalSupplierName: (
+              await this.$store.dispatch("getSupplierById", {
+                id: part.globalSupplierId,
+              })
+            ).data.name,
           }),
           partDescription: part.partDescription,
           lastChanged: part.lastChanged,

@@ -23,6 +23,24 @@
             >
               إضافة
             </v-btn>
+            <v-btn
+              v-if="mode == 'view'"
+              dark
+              text
+              :disabled="!validate"
+              @click="add"
+            >
+              Approve
+            </v-btn>
+            <v-btn
+              v-if="mode == 'view'"
+              dark
+              text
+              :disabled="!validate"
+              @click="add"
+            >
+              Reject
+            </v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <v-container class="pa-10">

@@ -6,6 +6,7 @@
       :items="reports"
       :item-class="rowColor"
       class="elevation-1"
+      show-expand
     >
       <template v-slot:top>
         <v-toolbar flat>
@@ -509,8 +510,13 @@
                         label="Spare Part Code"
                         item-text="name"
                         item-value="id"
+                        clearable
                         :disabled="allParts.length < 1 || mode == 'view'"
-                        :rules="[rules.required]"
+                        :rules="[
+                          !!item.partsDetails[index].quantity
+                            ? rules.required
+                            : true,
+                        ]"
                       >
                       </v-autocomplete>
                     </v-col>
@@ -518,7 +524,14 @@
                       <v-text-field
                         v-model.number="item.partsDetails[index].quantity"
                         label="Quantity"
-                        :rules="[rules.required, rules.number]"
+                        :rules="[
+                          !!item.partsDetails[index].partCode
+                            ? rules.required
+                            : true,
+                          !!item.partsDetails[index].partCode
+                            ? rules.number
+                            : true,
+                        ]"
                         :disabled="mode == 'view'"
                       >
                       </v-text-field>
@@ -534,7 +547,11 @@
                         item-value="id"
                         clearable
                         :disabled="allParts.length < 1 || mode == 'view'"
-                        :rules="[rules.required]"
+                        :rules="[
+                          !!item.partsDetails[index].quantity
+                            ? rules.required
+                            : true,
+                        ]"
                       >
                       </v-autocomplete>
                     </v-col>
@@ -784,7 +801,20 @@
           </v-list>
         </v-menu>
       </template>
-
+      <template v-slot:expanded-item="{ item }">
+        <td class="maxWidth px-10 py-10" :cols="4">
+          <p class="subtitle-2 text-left">Status</p>
+          {{ item.statusName }}
+        </td>
+        <td class="maxWidth px-10 py-10" :cols="4">
+          <p class="subtitle-2 text-left">From</p>
+          {{ item.fromPicker }}
+        </td>
+        <td class="maxWidth px-10 py-10" :cols="4">
+          <p class="subtitle-2 text-left">To</p>
+          {{ item.toPicker }}
+        </td>
+      </template>
       <template v-slot:no-data>
         <no-data></no-data>
       </template>
@@ -821,11 +851,16 @@ export default {
         { text: "Date", value: "date", sortable: true },
         { text: "Field", value: "fieldName", sortable: true },
         { text: "Equipment", value: "machineName", sortable: true },
-        { text: "Type", value: "typeName", sortable: true },
-        { text: "Status", value: "statusName", sortable: true },
+        // { text: "Type", value: "typeName", sortable: true },
+        // { text: "Status", value: "statusName", sortable: true },
         // { text: "From", value: "fromPicker", sortable: true },
         // { text: "To", value: "toPicker", sortable: true },
-        { text: "Total Time", value: "totalTime", sortable: true },
+        // { text: "Total Time", value: "totalTime", sortable: true },
+        {
+          text: "Problem Description",
+          value: "problemDescription",
+          sortable: true,
+        },
         { text: "Reported By", value: "reportedBy", sortable: true },
         { text: "Actions", value: "actions", sortable: false },
       ],
@@ -873,8 +908,8 @@ export default {
         problemDescription: this.item.problemDescription,
         incidentLocation: this.item.incidentLocation,
         reportCode: `${this.item.fieldId}-${this.item.machineId}-${
-          this.item.reportCode ? this.item.reportCode.split("-")[2] : ""
-        }`,
+          this.item.typeId
+        }-${this.item.reportCode ? this.item.reportCode.split("-")[2] : ""}`,
         // reportCodeValue: `${
         //   (
         //     await this.$store.dispatch("getFieldById", {
@@ -888,7 +923,7 @@ export default {
         //     })
         //   ).data.code
         // }-${this.item.reportCode ? this.item.reportCode.split("-")[2] : ""}`,
-        reportedBy: this.$store.getters.currentUser.name,
+        reportedBy: this.$store.getters.currentUser.id,
       };
     },
 
@@ -1007,6 +1042,7 @@ export default {
         this.incidentLocationList.push(r.incidentLocation);
       }
       this.reports = await this.normalizeReturnedReports(respData);
+
       this.loader = false;
     },
     async loadAllFields() {
@@ -1291,9 +1327,6 @@ export default {
         id: id,
       });
       t = t.data;
-      delete t.incidentLocation;
-      delete t.problemDescription;
-      delete t.actionDescription;
       this.item = { ...t, date: t.date.split("T")[0] };
 
       this.reloadReports();

@@ -112,7 +112,7 @@ exports.deleteSupplier = async (req, res) => {
       userId: user._id,
       actionTaken: "3",
       table: "Suppliers",
-      link: { name: "ReportId", params: { id: req.body.id } },
+      link: { name: "SuppliersId", params: { id: req.body.id } },
       timestamp: new Intl.DateTimeFormat("en-GB", {
         day: "numeric",
         month: "numeric",

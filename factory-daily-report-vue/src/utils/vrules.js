@@ -8,11 +8,13 @@ export function email(v) {
 }
 export function arabic(v) {
   return (
-    /^[\u0621-\u064A0-9 ]+$/.test(v) || "Field accepts Arabic letters only"
+    /^[\u0621-\u064A0-9-_&/ ]+$/.test(v) || "Field accepts Arabic letters only"
   );
 }
 export function english(v) {
-  return /^[a-zA-Z 0-9]+$/g.test(v) || "Field accepts English letters only";
+  return (
+    /^[a-zA-Z 0-9-_&/ ]+$/g.test(v) || "Field accepts English letters only"
+  );
 }
 export function number(v) {
   return !isNaN(v) || "Field accepts numbers only";

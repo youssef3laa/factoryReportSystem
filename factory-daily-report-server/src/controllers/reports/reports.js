@@ -154,6 +154,7 @@ exports.updateReport = async (req, res) => {
     };
     axios.post(`${urlPort}/logs/create`, o);
     req.body.isDeleted = false;
+    console.log(req.body);
     return res.send(
       getDB()
         .collection("reports")

@@ -31,15 +31,21 @@
         <no-data></no-data>
       </template>
     </v-data-table>
+    <v-card outlined class="mt-10">
+      <BarChart :data="parts"></BarChart>
+    </v-card>
   </div>
 </template>
 
 <script>
 import NoData from "../UI/NoData.vue";
 import SparePartConsumptionTabs from "./SparePartConsumptionTabs.vue";
+import BarChart from "./BarChart.vue";
+
 export default {
   components: {
     NoData,
+    BarChart,
     tabs: SparePartConsumptionTabs,
   },
   data() {
@@ -142,6 +148,7 @@ export default {
   },
 
   methods: {
+    generateChart() {},
     async reloadConsumptions(tabFilterId) {
       if (tabFilterId == 2) this.getGroupedParts();
       else this.getAllReports();

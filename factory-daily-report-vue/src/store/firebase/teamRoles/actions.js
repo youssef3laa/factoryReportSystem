@@ -7,6 +7,9 @@ export default {
   async editTeamRole(store, payload) {
     return axios.post(`${urlPort}/teamRoles/update`, payload);
   },
+  async deleteTeamRole(store, payload) {
+    return axios.post(`${urlPort}/teamRoles/delete`, payload);
+  },
   async getAllTeamRoles() {
     return await axios.get(`${urlPort}/teamRoles/`);
   },

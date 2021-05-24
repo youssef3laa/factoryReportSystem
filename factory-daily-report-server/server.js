@@ -20,7 +20,7 @@ const userRoutes = require("./src/routes/user/user");
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:8080"],
+    origin: ["http://localhost:8080", "http://192.168.1.106:8080"],
   })
 );
 app.use(cookieParser());
